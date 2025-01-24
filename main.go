@@ -22,28 +22,34 @@ type apiConfig struct {
 func main() {
 	godotenv.Load()
 
+	// Setting port
 	portString := os.Getenv("PORT")
 	if portString == "" {
 		log.Fatal("PORT is not found in the environment")
 	}
 
+	// Setting database url to create connection
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
 		log.Fatal("DB_URL is not found in the environment")
 	}
 
+	// Setting database connectivity
 	conn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal("Can't connect to database", err)
 	}
 
+	// Setting database api configuration between app and postgres
 	db := database.New(conn)
 	apiCfg := apiConfig{
 		DB: db,
 	}
 
+	// Concurrently fetch posts of followed feeds
 	go startScraping(db, 10, time.Minute)
 
+	// Creating the router
 	router := chi.NewRouter()
 
 	//make requests to the server from a browser
@@ -56,6 +62,7 @@ func main() {
 		MaxAge:           300,
 	}))
 
+	// Assigning endpoints to their functionalities
 	v1Router := chi.NewRouter()
 	v1Router.Get("/healthz", handlerReadiness)
 	v1Router.Get("/err", handlerErr)
@@ -72,6 +79,7 @@ func main() {
 
 	v1Router.Get("/posts", apiCfg.middlewareAuth(apiCfg.handlerGetPostsForUser))
 
+	// Mounting router with all endpoints
 	router.Mount("/v1", v1Router)
 
 	srv := &http.Server{

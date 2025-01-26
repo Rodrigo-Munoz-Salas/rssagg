@@ -79,6 +79,8 @@ func main() {
 
 	v1Router.Get("/posts", apiCfg.middlewareAuth(apiCfg.handlerGetPostsForUser))
 
+	// END OF ADDED FUNCTIONALITIES
+
 	// Mounting router with all endpoints
 	router.Mount("/v1", v1Router)
 
